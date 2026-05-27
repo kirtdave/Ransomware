@@ -141,7 +141,7 @@ const DISCUSSION_SECTIONS = [
     blocks: [
       {
         type: "text",
-        text: 'Ransomware is a category of malicious software that encrypts a victim\'s files or entire systems, then demands payment usually in cryptocurrency in exchange for a decryption key. The term combines "ransom" and "software": it holds your data hostage until you pay.',
+        text: 'Ransomware is a category of malicious software that encrypts a victim\'s files or entire systems, then demands payment usually in cryptocurrency — in exchange for a decryption key. The term combines "ransom" and "software": it holds your data hostage until you pay.',
       },
       {
         type: "text",
@@ -259,7 +259,7 @@ const DISCUSSION_SECTIONS = [
           },
           {
             name: "NotPetya (2017)",
-            target: "Ukraine → Maersk, Merck, FedEx TNT",
+            target: "Ukraine Maersk, Merck, FedEx TNT",
             impact:
               "$10B+ total damages most destructive cyberattack in history",
             detail:
@@ -331,180 +331,174 @@ const DISCUSSION_SECTIONS = [
   },
 ];
 
-// ── CANVAS BG — PULSING NETWORK GRID ─────────────────────────────────────────
+// ── SWAP 1: FLOATING PADLOCKS BACKGROUND ─────────────────────────────────────
+// Replaces the old NetworkBg canvas function entirely.
 
-function NetworkBg() {
-  const canvasRef = useRef(null);
+function FloatingPadlocksBg() {
+  const containerRef = useRef(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    let raf;
-    let W, H;
+    const container = containerRef.current;
+    if (!container) return;
 
-    const COLS = 12,
-      ROWS = 8;
-    let nodes = [];
+    const ICONS = ["🔒", "🔑", "🔓", "💀", "🔒", "🔑", "🔒", "🔒", "🔑"];
+    const COUNT = 22;
+    const items = [];
 
-    const resize = () => {
-      W = canvas.width = window.innerWidth;
-      H = canvas.height = window.innerHeight;
-      nodes = [];
-      for (let r = 0; r <= ROWS; r++) {
-        for (let c = 0; c <= COLS; c++) {
-          nodes.push({
-            bx: (c / COLS) * W,
-            by: (r / ROWS) * H,
-            ox: (Math.random() - 0.5) * 60,
-            oy: (Math.random() - 0.5) * 60,
-            phase: Math.random() * Math.PI * 2,
-            speed: 0.3 + Math.random() * 0.4,
-            pulse: Math.random() * Math.PI * 2,
-          });
-        }
-      }
-    };
+    for (let i = 0; i < COUNT; i++) {
+      const el = document.createElement("div");
+      const icon = ICONS[i % ICONS.length];
+      const size = 14 + Math.random() * 22; // 14–36px
+      const startX = Math.random() * 100; // % across screen
+      const startY = Math.random() * 100; // % down screen
+      const dur = 18 + Math.random() * 24; // 18–42s orbit cycle
+      const driftX = (Math.random() - 0.5) * 180; // px horizontal drift
+      const driftY = (Math.random() - 0.5) * 140; // px vertical drift
+      const delay = -(Math.random() * dur); // stagger start
+      const rot = (Math.random() - 0.5) * 30; // slight rotation
+      const opacity = 0.06 + Math.random() * 0.1; // very subtle 6–16%
 
-    resize();
-    window.addEventListener("resize", resize);
+      el.textContent = icon;
+      el.style.cssText = `
+        position: absolute;
+        font-size: ${size}px;
+        left: ${startX}%;
+        top: ${startY}%;
+        opacity: ${opacity};
+        user-select: none;
+        pointer-events: none;
+        filter: grayscale(1) brightness(0.6) sepia(1) hue-rotate(190deg);
+        animation: padlock-float-${i} ${dur}s ease-in-out ${delay}s infinite;
+      `;
 
-    const CONN_DIST = (W / COLS) * 1.6;
-
-    const draw = (t) => {
-      ctx.clearRect(0, 0, W, H);
-
-      // update positions
-      nodes.forEach((n) => {
-        n.x = n.bx + n.ox * Math.sin(t * 0.0004 * n.speed + n.phase);
-        n.y = n.by + n.oy * Math.cos(t * 0.0003 * n.speed + n.phase + 1);
-        n.p = (Math.sin(t * 0.001 * n.speed + n.pulse) + 1) / 2; // 0..1
-      });
-
-      // draw edges
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const dx = nodes[i].x - nodes[j].x;
-          const dy = nodes[i].y - nodes[j].y;
-          const d = Math.sqrt(dx * dx + dy * dy);
-          if (d < CONN_DIST) {
-            const alpha = (1 - d / CONN_DIST) * 0.18;
-            ctx.beginPath();
-            ctx.moveTo(nodes[i].x, nodes[i].y);
-            ctx.lineTo(nodes[j].x, nodes[j].y);
-            ctx.strokeStyle = `rgba(37,99,235,${alpha})`;
-            ctx.lineWidth = 1;
-            ctx.stroke();
+      // inject per-element keyframes
+      const sheet = document.styleSheets[0];
+      try {
+        sheet.insertRule(
+          `
+          @keyframes padlock-float-${i} {
+            0%   { transform: translate(0px, 0px) rotate(0deg); }
+            25%  { transform: translate(${driftX * 0.5}px, ${driftY * 0.4}px) rotate(${rot * 0.5}deg); }
+            50%  { transform: translate(${driftX}px, ${driftY}px) rotate(${rot}deg); }
+            75%  { transform: translate(${driftX * 0.3}px, ${driftY * 0.7}px) rotate(${rot * -0.3}deg); }
+            100% { transform: translate(0px, 0px) rotate(0deg); }
           }
-        }
+        `,
+          sheet.cssRules.length,
+        );
+      } catch (e) {
+        /* cross-origin stylesheet — skip */
       }
 
-      // draw nodes
-      nodes.forEach((n) => {
-        const r = 2 + n.p * 2;
-        const glow = 6 + n.p * 10;
-        const alpha = 0.25 + n.p * 0.45;
+      container.appendChild(el);
+      items.push(el);
+    }
 
-        const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, glow);
-        grad.addColorStop(0, `rgba(96,165,250,${alpha})`);
-        grad.addColorStop(1, `rgba(37,99,235,0)`);
-
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, glow, 0, Math.PI * 2);
-        ctx.fillStyle = grad;
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(96,165,250,${alpha + 0.2})`;
-        ctx.fill();
-      });
-
-      raf = requestAnimationFrame(draw);
-    };
-
-    raf = requestAnimationFrame(draw);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", resize);
-    };
+    return () => items.forEach((el) => el.remove());
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
+    <div
+      ref={containerRef}
       style={{
         position: "fixed",
         inset: 0,
         zIndex: 0,
         pointerEvents: "none",
-        opacity: 0.55,
+        overflow: "hidden",
       }}
     />
   );
 }
 
-// ── LOADING SCREEN — FAKE ENCRYPT ────────────────────────────────────────────
+// ── SWAP 2: RANSOM NOTE LOADING SCREEN ───────────────────────────────────────
+// Replaces the old LoadingScreen function entirely.
 
 function LoadingScreen({ onDone }) {
   const [visible, setVisible] = useState(true);
-  const [phase, setPhase] = useState("encrypting"); // encrypting | demand | joke
-  const [filesDone, setFilesDone] = useState(0);
-  const [countdown, setCountdown] = useState(10);
+  const [typed, setTyped] = useState("");
+  const [phase, setPhase] = useState("typing"); // typing | skull | exit
+  const [showSkull, setShowSkull] = useState(false);
 
-  const fakeFiles = [
-    "thesis_final_REAL.docx",
-    "vacation_photos_2024.zip",
-    "passwords.txt",
-    "bank_statements.xlsx",
-    "macky_resume.pdf",
-    "mom_recipes.docx",
-    "CS_project_code.zip",
-    "my_minecraft_world.dat",
-    "grades_semester3.pdf",
-    "crypto_wallet.key",
+  const noteLines = [
+    "YOUR FILES ARE MINE.",
+    "",
+    "Every document. Every photo.",
+    "Every secret you thought was safe.",
+    "All of it encrypted.",
+    "",
+    "Want them back?",
+    "Send 0.1 BTC to:",
+    "1Macky4RansomWare9XxBtc...",
+    "",
+    "You have 72 hours.",
+    "After that...",
+    "...goodbye forever. 💀",
+    "",
+    "— The Ransomware",
+    "",
+    "",
+    "   ...just kidding 😂",
+    "   This is a school project.",
+    "   Your files are fine. Probably.",
   ];
 
+  const fullText = noteLines.join("\n");
+
   useEffect(() => {
-    // encrypt phase: reveal files one by one
-    let i = 0;
-    const enc = setInterval(() => {
-      i++;
-      setFilesDone(i);
-      if (i >= fakeFiles.length) {
-        clearInterval(enc);
-        setTimeout(() => setPhase("demand"), 400);
+    let idx = 0;
+    const speed = 28; // ms per character
+    const t = setInterval(() => {
+      idx++;
+      setTyped(fullText.slice(0, idx));
+      if (idx >= fullText.length) {
+        clearInterval(t);
+        setTimeout(() => setPhase("skull"), 400);
       }
-    }, 280);
-    return () => clearInterval(enc);
+    }, speed);
+    return () => clearInterval(t);
   }, []);
 
   useEffect(() => {
-    if (phase !== "demand") return;
-    // count from 10 to 0
-    const t = setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) {
-          clearInterval(t);
-          setPhase("joke");
-          return 0;
-        }
-        return c - 1;
-      });
-    }, 300);
-    return () => clearInterval(t);
-  }, [phase]);
-
-  useEffect(() => {
-    if (phase !== "joke") return;
-    const t = setTimeout(() => {
-      setVisible(false);
-      setTimeout(onDone, 700);
-    }, 1800);
+    if (phase !== "skull") return;
+    setShowSkull(true);
+    const t = setTimeout(() => setPhase("exit"), 1600);
     return () => clearTimeout(t);
   }, [phase]);
 
-  const progress = filesDone / fakeFiles.length;
+  useEffect(() => {
+    if (phase !== "exit") return;
+    setVisible(false);
+    const t = setTimeout(onDone, 800);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  // progress: chars typed / total chars
+  const progress = Math.min(typed.length / fullText.length, 1);
+
+  // colour each line differently
+  const renderLines = () =>
+    typed.split("\n").map((line, i) => {
+      let color = "#c8b9a0"; // default ink
+      if (line.includes("YOUR FILES ARE MINE")) color = "#cc2200";
+      if (line.includes("encrypted")) color = "#cc2200";
+      if (line.includes("0.1 BTC") || line.includes("1Macky"))
+        color = "#e8a020";
+      if (line.includes("72 hours")) color = "#cc6600";
+      if (line.includes("goodbye forever")) color = "#990000";
+      if (line.includes("— The Ransomware")) color = "#884422";
+      if (
+        line.includes("kidding") ||
+        line.includes("school") ||
+        line.includes("fine")
+      )
+        color = "#6b9fd4";
+      return (
+        <div key={i} style={{ color, minHeight: "1.45em", lineHeight: "1.45" }}>
+          {line || "\u00A0"}
+        </div>
+      );
+    });
 
   return (
     <div
@@ -512,36 +506,150 @@ function LoadingScreen({ onDone }) {
         position: "fixed",
         inset: 0,
         zIndex: 9999,
-        background: "#03080f",
+        background: "#1a1208",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        fontFamily: "'Space Mono',monospace",
+        fontFamily: "'Space Mono', monospace",
         opacity: visible ? 1 : 0,
-        transition: "opacity 0.7s ease",
+        transition: "opacity 0.8s ease",
         padding: "1rem",
+        overflow: "hidden",
       }}
     >
-      {/* Skull watermark */}
+      {/* Paper texture overlay */}
       <div
         style={{
           position: "absolute",
-          fontSize: "clamp(8rem,25vw,18rem)",
-          opacity: 0.025,
+          inset: 0,
+          pointerEvents: "none",
+          background:
+            "repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(180,160,120,0.04) 28px)",
+          zIndex: 1,
+        }}
+      />
+
+      {/* Red margin line */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          left: "calc(50% - 230px)",
+          width: "2px",
+          background: "rgba(180,40,20,0.25)",
+          pointerEvents: "none",
+          zIndex: 2,
+        }}
+      />
+
+      {/* Big skull watermark — fades in at end */}
+      <div
+        style={{
+          position: "absolute",
+          fontSize: "clamp(10rem, 30vw, 22rem)",
+          opacity: showSkull ? 0.06 : 0,
+          transition: "opacity 0.8s ease",
           userSelect: "none",
           pointerEvents: "none",
-          filter: "blur(1px)",
+          zIndex: 1,
+          filter: "grayscale(1)",
         }}
       >
         💀
       </div>
 
-      {/* Logo */}
-      <div style={{ marginBottom: "1.5rem", textAlign: "center" }}>
+      {/* Note paper */}
+      <div
+        style={{
+          position: "relative",
+          zIndex: 3,
+          width: "min(500px, 92vw)",
+          background:
+            "linear-gradient(160deg, #f5edd8 0%, #ede0c4 60%, #e8d9b8 100%)",
+          boxShadow:
+            "0 8px 40px rgba(0,0,0,0.7), 2px 2px 0 rgba(0,0,0,0.15) inset",
+          padding: "clamp(1.2rem, 4vw, 2rem) clamp(1.5rem, 5vw, 2.5rem)",
+          borderRadius: "1px",
+          transform: "rotate(-1.2deg)",
+          minHeight: "320px",
+          maxHeight: "65vh",
+          overflow: "hidden",
+        }}
+      >
+        {/* Torn top edge */}
         <div
           style={{
-            fontSize: "clamp(1.1rem,4vw,1.7rem)",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "8px",
+            background:
+              "linear-gradient(90deg, #e8d5b0 0%, #f2e6cc 30%, #ddd0b0 60%, #ece0c8 100%)",
+            clipPath:
+              "polygon(0 100%, 3% 0, 7% 80%, 12% 20%, 18% 90%, 24% 10%, 30% 70%, 36% 30%, 42% 85%, 48% 15%, 54% 75%, 60% 25%, 66% 80%, 72% 20%, 78% 70%, 84% 10%, 90% 60%, 95% 30%, 100% 0, 100% 100%)",
+          }}
+        />
+
+        {/* Header */}
+        <div
+          style={{
+            fontFamily: "serif",
+            fontSize: "clamp(1rem, 3.5vw, 1.4rem)",
+            color: "#880000",
+            textAlign: "center",
+            marginBottom: "1rem",
+            fontWeight: "bold",
+            letterSpacing: "1px",
+            textShadow: "1px 1px 0 rgba(0,0,0,0.15)",
+            borderBottom: "1px solid rgba(150,100,60,0.3)",
+            paddingBottom: "0.5rem",
+          }}
+        >
+          ☠ RANSOM NOTE ☠
+        </div>
+
+        {/* Typed text */}
+        <div
+          style={{
+            fontFamily: "'Space Mono', monospace",
+            fontSize: "clamp(0.58rem, 1.6vw, 0.72rem)",
+            lineHeight: "1.45",
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+          }}
+        >
+          {renderLines()}
+          {phase === "typing" && (
+            <span
+              style={{
+                display: "inline-block",
+                width: "8px",
+                height: "1em",
+                background: "#cc2200",
+                verticalAlign: "text-bottom",
+                animation: "rn-blink 0.7s step-end infinite",
+                marginLeft: "1px",
+              }}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Branding below */}
+      <div
+        style={{
+          position: "relative",
+          zIndex: 3,
+          marginTop: "1.25rem",
+          textAlign: "center",
+        }}
+      >
+        <div
+          style={{
+            fontSize: "clamp(0.9rem, 3vw, 1.2rem)",
             fontWeight: 700,
             letterSpacing: "3px",
             color: "#dbeafe",
@@ -561,8 +669,8 @@ function LoadingScreen({ onDone }) {
         <div
           style={{
             fontSize: "9px",
-            color: "#2a4a6e",
-            letterSpacing: "2.5px",
+            color: "#4a6a8e",
+            letterSpacing: "2px",
             marginTop: "4px",
           }}
         >
@@ -570,246 +678,15 @@ function LoadingScreen({ onDone }) {
         </div>
       </div>
 
-      {/* Window */}
-      <div
-        style={{
-          width: "min(540px,94vw)",
-          background: "#050d1a",
-          border: "1px solid #102040",
-          borderTop: "2px solid #2563eb",
-          overflow: "hidden",
-        }}
-      >
-        {/* Title bar */}
-        <div
-          style={{
-            background: "#081425",
-            borderBottom: "1px solid #102040",
-            padding: "8px 14px",
-            display: "flex",
-            alignItems: "center",
-            gap: "7px",
-          }}
-        >
-          <span
-            style={{
-              width: 10,
-              height: 10,
-              borderRadius: "50%",
-              background: "#ef4444",
-              display: "inline-block",
-            }}
-          />
-          <span
-            style={{
-              width: 10,
-              height: 10,
-              borderRadius: "50%",
-              background: "#f59e0b",
-              display: "inline-block",
-            }}
-          />
-          <span
-            style={{
-              width: 10,
-              height: 10,
-              borderRadius: "50%",
-              background: "#22c55e",
-              display: "inline-block",
-            }}
-          />
-          <span
-            style={{
-              fontSize: "10px",
-              color: "#2a4a6e",
-              marginLeft: "6px",
-              letterSpacing: "1px",
-            }}
-          >
-            {phase === "joke"
-              ? "haha_gotcha.exe"
-              : phase === "demand"
-                ? "YOUR_FILES_ARE_ENCRYPTED.txt"
-                : "encrypting_files.exe"}
-          </span>
-        </div>
-
-        {/* Body */}
-        <div style={{ padding: "1.25rem 1.5rem", minHeight: "240px" }}>
-          {/* PHASE 1 — encrypting */}
-          {phase === "encrypting" && (
-            <div>
-              <div
-                style={{
-                  fontSize: "clamp(0.65rem,1.8vw,0.75rem)",
-                  color: "#ef4444",
-                  marginBottom: "12px",
-                  letterSpacing: "1px",
-                }}
-              >
-                🔒 ENCRYPTING YOUR FILES...
-              </div>
-              <div
-                style={{ display: "flex", flexDirection: "column", gap: "3px" }}
-              >
-                {fakeFiles.map((f, i) => (
-                  <div
-                    key={f}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      opacity: i < filesDone ? 1 : 0.25,
-                      transition: "opacity 0.2s",
-                      fontSize: "clamp(0.6rem,1.6vw,0.72rem)",
-                    }}
-                  >
-                    <span
-                      style={{ color: i < filesDone ? "#ef4444" : "#2a4a6e" }}
-                    >
-                      {i < filesDone ? "🔒" : "📄"}
-                    </span>
-                    <span
-                      style={{
-                        color: i < filesDone ? "#6b9fd4" : "#2a4a6e",
-                        flex: 1,
-                      }}
-                    >
-                      {f}
-                    </span>
-                    {i < filesDone && (
-                      <span
-                        style={{
-                          color: "#ef4444",
-                          letterSpacing: "0.5px",
-                          fontSize: "9px",
-                        }}
-                      >
-                        .{Math.random().toString(36).slice(2, 7).toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* PHASE 2 — demand */}
-          {phase === "demand" && (
-            <div style={{ textAlign: "center", padding: "1rem 0" }}>
-              <div
-                style={{
-                  fontSize: "clamp(1.5rem,6vw,2.5rem)",
-                  marginBottom: "8px",
-                }}
-              >
-                💀
-              </div>
-              <div
-                style={{
-                  fontSize: "clamp(0.9rem,3vw,1.2rem)",
-                  fontWeight: 700,
-                  color: "#ef4444",
-                  letterSpacing: "2px",
-                  marginBottom: "12px",
-                  textShadow: "0 0 12px rgba(239,68,68,0.6)",
-                }}
-              >
-                YOUR FILES ARE ENCRYPTED
-              </div>
-              <div
-                style={{
-                  fontSize: "clamp(0.6rem,1.8vw,0.72rem)",
-                  color: "#6b9fd4",
-                  marginBottom: "16px",
-                  lineHeight: "1.7",
-                }}
-              >
-                All {fakeFiles.length} of your precious files are now locked.
-                <br />
-                Send <span style={{ color: "#f59e0b" }}>0.05 BTC</span> to get
-                them back.
-                <br />
-                <span style={{ color: "#2a4a6e" }}>
-                  1A2B3C4D5E6F7G8H9I...Macky
-                </span>
-              </div>
-              <div
-                style={{
-                  display: "inline-block",
-                  padding: "10px 24px",
-                  border: "2px solid #ef4444",
-                  fontSize: "clamp(1rem,4vw,1.8rem)",
-                  fontWeight: 700,
-                  color: countdown <= 3 ? "#ef4444" : "#fb923c",
-                  letterSpacing: "4px",
-                  textShadow:
-                    countdown <= 3 ? "0 0 20px rgba(239,68,68,0.8)" : "none",
-                  transition: "all 0.2s",
-                }}
-              >
-                00:{String(countdown).padStart(2, "0")}
-              </div>
-              <div
-                style={{
-                  fontSize: "9px",
-                  color: "#2a4a6e",
-                  marginTop: "8px",
-                  letterSpacing: "1px",
-                }}
-              >
-                TIME REMAINING
-              </div>
-            </div>
-          )}
-
-          {/* PHASE 3 — joke */}
-          {phase === "joke" && (
-            <div style={{ textAlign: "center", padding: "1.5rem 0" }}>
-              <div
-                style={{
-                  fontSize: "clamp(1.5rem,6vw,2.5rem)",
-                  marginBottom: "12px",
-                }}
-              >
-                😂
-              </div>
-              <div
-                style={{
-                  fontSize: "clamp(0.9rem,3vw,1.1rem)",
-                  fontWeight: 700,
-                  color: "#60a5fa",
-                  letterSpacing: "1px",
-                  marginBottom: "8px",
-                }}
-              >
-                RELAX. IT'S JUST A WEBSITE.
-              </div>
-              <div
-                style={{
-                  fontSize: "clamp(0.6rem,1.8vw,0.72rem)",
-                  color: "#6b9fd4",
-                  lineHeight: "1.8",
-                }}
-              >
-                No files were harmed in the making of this project. 🤙
-                <br />
-                <span style={{ color: "#2a4a6e" }}>
-                  Loading actual content now...
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Progress bar */}
       <div
         style={{
-          width: "min(540px,94vw)",
+          position: "relative",
+          zIndex: 3,
+          width: "min(500px,92vw)",
           height: "3px",
           background: "#102040",
-          marginTop: "12px",
+          marginTop: "10px",
           overflow: "hidden",
         }}
       >
@@ -817,36 +694,33 @@ function LoadingScreen({ onDone }) {
           style={{
             height: "100%",
             background:
-              phase === "joke"
+              phase === "exit"
                 ? "linear-gradient(90deg,#22c55e,#60a5fa)"
-                : phase === "demand"
-                  ? "linear-gradient(90deg,#ef4444,#f59e0b)"
-                  : "linear-gradient(90deg,#2563eb,#ef4444)",
-            boxShadow: "0 0 10px rgba(37,99,235,0.6)",
-            width:
-              phase === "joke"
-                ? "100%"
-                : phase === "demand"
-                  ? `${((10 - countdown) / 10) * 100}%`
-                  : `${progress * 100}%`,
-            transition: "width 0.28s ease",
+                : "linear-gradient(90deg,#cc2200,#e8a020)",
+            width: `${progress * 100}%`,
+            transition: "width 0.1s linear",
+            boxShadow: "0 0 8px rgba(200,50,0,0.5)",
           }}
         />
       </div>
       <div
         style={{
-          fontSize: "10px",
-          color: "#2a4a6e",
-          marginTop: "6px",
+          position: "relative",
+          zIndex: 3,
+          fontSize: "9px",
+          color: "#4a6a8e",
+          marginTop: "5px",
           letterSpacing: "2px",
         }}
       >
-        {phase === "joke"
-          ? "100% — SAFE TO ENTER 🙂"
-          : phase === "demand"
-            ? `COUNTDOWN: ${countdown}s`
-            : `${filesDone}/${fakeFiles.length} FILES ENCRYPTED`}
+        {phase === "exit"
+          ? "LOADING SITE..."
+          : `WRITING NOTE... ${Math.round(progress * 100)}%`}
       </div>
+
+      <style>{`
+        @keyframes rn-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+      `}</style>
     </div>
   );
 }
@@ -914,7 +788,6 @@ function NavBar({ active, setActive }) {
 function Home({ setActive }) {
   return (
     <div className="rw-page">
-      {/* Hero */}
       <section className="rw-hero">
         <div className="rw-hero-left">
           <div className="rw-hero-eyebrow">
@@ -927,7 +800,7 @@ function Home({ setActive }) {
             <span className="rw-hero-hollow">WARE</span>
           </h1>
           <p className="rw-hero-desc">
-            Malicious software that encrypts your files and holds them hostage —
+            Malicious software that encrypts your files and holds them hostage
             demanding cryptocurrency payment for their return. The defining
             cyber threat of the modern era.
           </p>
@@ -979,7 +852,6 @@ function Home({ setActive }) {
         </div>
       </section>
 
-      {/* Stats */}
       <section className="rw-stats-row">
         {STATS.map((s, i) => (
           <div
@@ -993,10 +865,9 @@ function Home({ setActive }) {
         ))}
       </section>
 
-      {/* Overview */}
       <section className="rw-section">
         <div className="rw-section-head">
-          <span className="rw-eyebrow"></span>
+          <span className="rw-eyebrow">// 01 — OVERVIEW</span>
           <h2 className="rw-h2">The Basics</h2>
         </div>
         <div className="rw-split-3">
@@ -1030,10 +901,9 @@ function Home({ setActive }) {
         </div>
       </section>
 
-      {/* Timeline */}
       <section className="rw-section">
         <div className="rw-section-head">
-          <span className="rw-eyebrow"></span>
+          <span className="rw-eyebrow">// 02 — HISTORY</span>
           <h2 className="rw-h2">Key Milestones</h2>
         </div>
         <div className="rw-timeline">
@@ -1050,7 +920,6 @@ function Home({ setActive }) {
         </div>
       </section>
 
-      {/* CTA */}
       <section className="rw-cta-strip">
         <div>
           <span className="rw-eyebrow">// LEARN MORE</span>
@@ -1083,10 +952,10 @@ function Discussion() {
   return (
     <div className="rw-page">
       <div className="rw-page-head">
-        <span className="rw-eyebrow">// 02 — DISCUSSION</span>
+        <span className="rw-eyebrow"></span>
         <h1 className="rw-page-title">Understanding Ransomware</h1>
         <p className="rw-page-intro">
-          A detailed breakdown of ransomware — what it is, how it works, its
+          A detailed breakdown of ransomware what it is, how it works, its
           variants, real cases, and how to defend against it.
         </p>
       </div>
@@ -1194,7 +1063,7 @@ function Articles() {
   return (
     <div className="rw-page">
       <div className="rw-page-head">
-        <span className="rw-eyebrow">// 03 — ARTICLES & NEWS</span>
+        <span className="rw-eyebrow"></span>
         <h1 className="rw-page-title">In the Headlines</h1>
         <p className="rw-page-intro">
           Five key articles and reports on real ransomware attacks, research
@@ -1252,23 +1121,23 @@ function Reflection() {
     {
       num: "01",
       title: "THE SHOCK OF SCALE",
-      text: "Before studying ransomware in depth, I assumed cyberattacks were mostly problems for large corporations — entities far removed from everyday life. Learning about WannaCry completely dismantled that assumption. The idea that a single piece of code could spiral across 150 countries within a single day and force hospitals to turn away patients in genuine medical need was genuinely alarming to me. It revealed that digital threats are not abstract technical issues confined to server rooms — they are physical-world emergencies with life-or-death consequences. The fact that the vulnerability exploited by WannaCry had a patch available that many organizations had simply never applied made it even more sobering. Negligence in the digital space costs lives in the real world.",
+      text: "Before studying ransomware in depth, I assumed cyberattacks were mostly problems for large corporations entities far removed from everyday life. Learning about WannaCry completely dismantled that assumption. The idea that a single piece of code could spiral across 150 countries within a single day and force hospitals to turn away patients in genuine medical need was genuinely alarming to me. It revealed that digital threats are not abstract technical issues confined to server rooms they are physical-world emergencies with life-or-death consequences. The fact that the vulnerability exploited by WannaCry had a patch available that many organizations had simply never applied made it even more sobering. Negligence in the digital space costs lives in the real world.",
     },
     {
       num: "02",
       title: "THE HUMAN ELEMENT",
-      text: "What surprised me most was how little of ransomware's success depends on sophisticated code, and how much depends on human psychology. The majority of attacks begin with a phishing email — carefully crafted to look trustworthy and provoke urgency. Attackers do not need to break through firewalls if they can simply trick a person into opening a door for them. This made me reflect on my own digital habits: How carefully do I read email senders? Do I verify links before clicking? Am I using multi-factor authentication? Studying ransomware has made me far more conscious of my online behavior — not out of paranoia, but out of informed awareness. Cybersecurity is less about technology and more about cultivating a disciplined, skeptical mindset.",
+      text: "What surprised me most was how little of ransomware's success depends on sophisticated code, and how much depends on human psychology. The majority of attacks begin with a phishing email carefully crafted to look trustworthy and provoke urgency. Attackers do not need to break through firewalls if they can simply trick a person into opening a door for them. This made me reflect on my own digital habits: How carefully do I read email senders? Do I verify links before clicking? Am I using multi-factor authentication? Studying ransomware has made me far more conscious of my online behavior not out of paranoia, but out of informed awareness. Cybersecurity is less about technology and more about cultivating a disciplined, skeptical mindset.",
     },
     {
       num: "03",
       title: "A SHARED RESPONSIBILITY",
-      text: "Ransomware thrives because of a global ecosystem that enables it — unpatched systems, poor password hygiene, lack of training, and tolerance of cybercriminal groups. The Colonial Pipeline attack showed ransomware is now a matter of national security, not just an IT problem. Yet I believe individual awareness is where meaningful change begins. Every person who learns to spot a phishing email, every organization that maintains offline backups, and every institution that runs security training is a link in a chain of collective defense. This topic has genuinely changed how I see my role as a digital citizen. We are not passive bystanders — we are participants — and the choices we make about how we use and protect technology have real consequences for communities and critical infrastructure worldwide.",
+      text: "Ransomware thrives because of a global ecosystem that enables it unpatched systems, poor password hygiene, lack of training, and tolerance of cybercriminal groups. The Colonial Pipeline attack showed ransomware is now a matter of national security, not just an IT problem. Yet I believe individual awareness is where meaningful change begins. Every person who learns to spot a phishing email, every organization that maintains offline backups, and every institution that runs security training is a link in a chain of collective defense. This topic has genuinely changed how I see my role as a digital citizen. We are not passive bystanders we are participants and the choices we make about how we use and protect technology have real consequences for communities and critical infrastructure worldwide.",
     },
   ];
   return (
     <div className="rw-page">
       <div className="rw-page-head">
-        <span className="rw-eyebrow">// 04 — REFLECTION</span>
+        <span className="rw-eyebrow"></span>
         <h1 className="rw-page-title">My Reflection</h1>
         <p className="rw-page-intro">
           Three paragraphs on what studying ransomware taught me about
@@ -1360,8 +1229,8 @@ function About() {
             Hi! My name is Macky, a BSIT student from GCC. I am passionate about
             technology and believe that understanding digital threats is one of
             the most critical skills of the 21st century. This website was
-            created as a school project to raise awareness about ransomware —
-            one of the fastest-growing and most financially devastating cyber
+            created as a school project to raise awareness about ransomware one
+            of the fastest-growing and most financially devastating cyber
             threats today.
           </p>
           <p className="rw-about-para">
@@ -1374,8 +1243,8 @@ function About() {
           <p className="rw-about-para">
             Beyond school, I enjoy gaming, coding, reading, and Basketball. I
             look forward to learning more in computer science and cybersecurity.
-            Thank you for visiting — I hope this site leaves you more informed
-            and more vigilant online.
+            Thank you for visiting I hope this site leaves you more informed and
+            more vigilant online.
           </p>
         </div>
       </div>
@@ -1421,10 +1290,10 @@ function Footer({ setActive }) {
         <div>
           <div className="rw-footer-brand">
             RANSOM<span style={{ color: "var(--rw-accent)" }}>WARE</span>
-            <span style={{ color: "var(--rw-accent2)" }}>.Macky</span>
+            <span style={{ color: "var(--rw-accent2)" }}>Macky</span>
           </div>
           <p className="rw-footer-desc">
-            A school cybersecurity awareness project about ransomware — how it
+            A school cybersecurity awareness project about ransomware how it
             works, why it matters, and how to stay protected.
           </p>
         </div>
@@ -1504,22 +1373,13 @@ export default function App() {
           --rw-mono:    'Space Mono', monospace;
         }
 
-        body {
-          background: var(--rw-bg);
-          color: var(--rw-text);
-          font-family: var(--rw-head);
-          min-height: 100vh;
-          overflow-x: hidden;
-        }
+        body { background:var(--rw-bg); color:var(--rw-text); font-family:var(--rw-head); min-height:100vh; overflow-x:hidden; }
         ::selection { background:var(--rw-accent); color:#fff; }
         ::-webkit-scrollbar { width:3px; }
         ::-webkit-scrollbar-track { background:var(--rw-bg); }
         ::-webkit-scrollbar-thumb { background:var(--rw-accent); }
 
-        /* ── canvas bg sits behind everything ── */
-        canvas { position:fixed; inset:0; z-index:0; pointer-events:none; }
-
-        /* ── radial glow blobs ── */
+        /* radial glow blobs */
         .rw-bg-blobs {
           position:fixed; inset:0; z-index:0; pointer-events:none;
           background:
@@ -1528,63 +1388,36 @@ export default function App() {
             radial-gradient(ellipse 35% 35% at 50% 95%, rgba(37,99,235,0.06) 0%, transparent 60%);
           animation: blobDrift 12s ease-in-out infinite alternate;
         }
-        @keyframes blobDrift {
-          0%   { opacity:0.7; transform:scale(1); }
-          100% { opacity:1;   transform:scale(1.04); }
-        }
+        @keyframes blobDrift { 0%{opacity:0.7;transform:scale(1)} 100%{opacity:1;transform:scale(1.04)} }
 
-        /* page content above canvas layers */
         .rw-nav, .rw-page, .rw-footer { position:relative; z-index:1; }
 
-        /* ── keyframes ── */
         @keyframes pulseNode {
           0%,100% { box-shadow:0 0 4px rgba(96,165,250,0.3); }
           50%      { box-shadow:0 0 14px rgba(96,165,250,0.7), 0 0 28px rgba(37,99,235,0.3); }
         }
-        @keyframes slideInUp {
-          from { opacity:0; transform:translateY(20px); }
-          to   { opacity:1; transform:translateY(0); }
-        }
-        @keyframes fadeIn {
-          from { opacity:0; } to { opacity:1; }
-        }
-        @keyframes shimmer {
-          0%   { background-position: -400px 0; }
-          100% { background-position:  400px 0; }
-        }
+        @keyframes slideInUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes fadeIn    { from{opacity:0} to{opacity:1} }
 
-        /* ── NAV ── */
-        .rw-nav {
-          position:sticky; top:0; z-index:100;
-          display:flex; align-items:center;
-          padding:0 2rem; height:58px;
-          background:rgba(3,8,15,0.92);
-          border-bottom:1px solid var(--rw-border);
-          backdrop-filter:blur(16px);
-          gap:2rem;
-        }
+        /* NAV */
+        .rw-nav { position:sticky; top:0; z-index:100; display:flex; align-items:center; padding:0 2rem; height:58px; background:rgba(3,8,15,0.92); border-bottom:1px solid var(--rw-border); backdrop-filter:blur(16px); gap:2rem; }
         .rw-nav-brand { display:flex; align-items:center; gap:10px; background:none; border:none; cursor:pointer; flex-shrink:0; }
-        .rw-nav-badge {
-          width:28px; height:28px; background:var(--rw-accent);
-          display:flex; align-items:center; justify-content:center;
-          font-family:var(--rw-mono); font-size:12px; font-weight:700; color:#fff;
-          animation: pulseNode 3s ease-in-out infinite;
-        }
+        .rw-nav-badge { width:28px; height:28px; background:var(--rw-accent); display:flex; align-items:center; justify-content:center; font-family:var(--rw-mono); font-size:12px; font-weight:700; color:#fff; animation:pulseNode 3s ease-in-out infinite; }
         .rw-nav-name  { font-family:var(--rw-mono); font-size:13px; letter-spacing:2px; color:var(--rw-text); font-weight:700; }
         .rw-nav-dot   { color:var(--rw-accent2); }
         .rw-nav-links { display:flex; align-items:center; gap:2px; margin-left:auto; }
-        .rw-nav-link  { padding:6px 14px; background:none; border:none; cursor:pointer; font-family:var(--rw-head); font-size:13px; font-weight:500; color:var(--rw-muted); letter-spacing:0.5px; border-radius:3px; transition:color 0.15s, background 0.15s; }
+        .rw-nav-link  { padding:6px 14px; background:none; border:none; cursor:pointer; font-family:var(--rw-head); font-size:13px; font-weight:500; color:var(--rw-muted); letter-spacing:0.5px; border-radius:3px; transition:color 0.15s,background 0.15s; }
         .rw-nav-link:hover { color:var(--rw-text); background:var(--rw-surface); }
         .rw-nav-link.rw-active { color:var(--rw-accent2); background:rgba(37,99,235,0.12); }
         .rw-hamburger { display:none; flex-direction:column; gap:5px; background:none; border:none; cursor:pointer; padding:6px; margin-left:auto; }
         .rw-hamburger span { display:block; width:20px; height:1.5px; background:var(--rw-text); transition:all 0.2s; }
         .rw-mobile-menu { position:absolute; top:58px; left:0; right:0; background:var(--rw-surface); border-bottom:1px solid var(--rw-border); display:flex; flex-direction:column; z-index:99; }
         .rw-mobile-link { padding:14px 24px; background:none; border:none; cursor:pointer; font-family:var(--rw-head); font-size:14px; font-weight:500; color:var(--rw-muted); text-align:left; border-bottom:1px solid var(--rw-border); display:flex; align-items:center; gap:10px; transition:color 0.15s; }
-        .rw-mobile-link:hover, .rw-mobile-link.rw-active { color:var(--rw-accent2); }
+        .rw-mobile-link:hover,.rw-mobile-link.rw-active { color:var(--rw-accent2); }
         .rw-mobile-arrow { font-family:var(--rw-mono); font-size:12px; color:var(--rw-dim); }
         .rw-mobile-link.rw-active .rw-mobile-arrow { color:var(--rw-accent); }
 
-        /* ── PAGE SHELL ── */
+        /* PAGE SHELL */
         .rw-page { max-width:1060px; margin:0 auto; padding:3rem 1.5rem 6rem; animation:fadeIn 0.5s ease; }
         .rw-section { margin-bottom:4rem; }
         .rw-section-head { margin-bottom:1.5rem; }
@@ -1594,7 +1427,7 @@ export default function App() {
         .rw-page-title { font-family:var(--rw-head); font-size:clamp(2rem,6vw,3.5rem); font-weight:700; color:var(--rw-text); letter-spacing:-0.5px; line-height:1.05; margin-bottom:0.75rem; }
         .rw-page-intro { font-family:var(--rw-mono); font-size:12px; line-height:1.9; color:var(--rw-muted); max-width:600px; }
 
-        /* ── HERO ── */
+        /* HERO */
         .rw-hero { display:grid; grid-template-columns:1fr 1fr; gap:3rem; align-items:center; padding:3rem 0 2rem; margin-bottom:2rem; }
         .rw-hero-eyebrow { font-family:var(--rw-mono); font-size:10px; letter-spacing:2px; color:var(--rw-muted); margin-bottom:1.25rem; display:flex; align-items:center; gap:8px; }
         .rw-hero-eyebrow-dot { width:6px; height:6px; border-radius:50%; background:var(--rw-accent); display:inline-block; animation:pulseNode 2s infinite; }
@@ -1602,18 +1435,16 @@ export default function App() {
         .rw-hero-hollow { -webkit-text-stroke:2px var(--rw-accent); -webkit-text-fill-color:transparent; }
         .rw-hero-desc { font-size:14px; line-height:1.75; color:var(--rw-muted); max-width:460px; margin-bottom:2rem; }
         .rw-hero-actions { display:flex; flex-wrap:wrap; gap:10px; }
-        .rw-btn-solid { padding:10px 22px; background:var(--rw-accent); color:#fff; border:none; cursor:pointer; font-family:var(--rw-head); font-size:13px; font-weight:600; border-radius:2px; transition:filter 0.15s, transform 0.1s; }
+        .rw-btn-solid { padding:10px 22px; background:var(--rw-accent); color:#fff; border:none; cursor:pointer; font-family:var(--rw-head); font-size:13px; font-weight:600; border-radius:2px; transition:filter 0.15s,transform 0.1s; }
         .rw-btn-solid:hover { filter:brightness(1.15); transform:translateY(-1px); }
-        .rw-btn-ghost { padding:10px 22px; background:transparent; border:1px solid var(--rw-border); color:var(--rw-muted); cursor:pointer; font-family:var(--rw-head); font-size:13px; font-weight:600; border-radius:2px; transition:border-color 0.15s, color 0.15s; }
+        .rw-btn-ghost { padding:10px 22px; background:transparent; border:1px solid var(--rw-border); color:var(--rw-muted); cursor:pointer; font-family:var(--rw-head); font-size:13px; font-weight:600; border-radius:2px; transition:border-color 0.15s,color 0.15s; }
         .rw-btn-ghost:hover { border-color:var(--rw-accent2); color:var(--rw-text); }
 
         /* Threat box */
         .rw-threat-box { background:var(--rw-surface); border:1px solid var(--rw-border); border-top:2px solid var(--rw-accent); }
         .rw-threat-header { display:flex; align-items:center; gap:6px; padding:10px 16px; border-bottom:1px solid var(--rw-border); }
-        .rw-threat-dot { width:8px; height:8px; border-radius:50%; background:var(--rw-dim); }
-        .rw-dot-red    { background:#ef4444; }
-        .rw-dot-yellow { background:#f59e0b; }
-        .rw-dot-dim    { background:var(--rw-dim); }
+        .rw-threat-dot { width:8px; height:8px; border-radius:50%; }
+        .rw-dot-red{background:#ef4444} .rw-dot-yellow{background:#f59e0b} .rw-dot-dim{background:var(--rw-dim)}
         .rw-threat-title { margin-left:auto; font-family:var(--rw-mono); font-size:9px; letter-spacing:2px; color:var(--rw-muted); }
         .rw-threat-body { padding:16px; }
         .rw-threat-level-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
@@ -1629,17 +1460,17 @@ export default function App() {
         /* Stats */
         .rw-stats-row { display:grid; grid-template-columns:repeat(4,1fr); border:1px solid var(--rw-border); margin-bottom:4rem; background:var(--rw-surface); }
         .rw-stat { padding:1.25rem 1.5rem; border-right:1px solid var(--rw-border); position:relative; overflow:hidden; transition:background 0.2s; }
-        .rw-stat:last-child { border-right:none; }
-        .rw-stat:hover { background:rgba(37,99,235,0.06); }
-        .rw-stat::after { content:''; position:absolute; bottom:0; left:0; right:0; height:2px; background:var(--rw-accent); transform:scaleX(0); transform-origin:left; transition:transform 0.3s; }
-        .rw-stat:hover::after { transform:scaleX(1); }
+        .rw-stat:last-child{border-right:none}
+        .rw-stat:hover{background:rgba(37,99,235,0.06)}
+        .rw-stat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--rw-accent);transform:scaleX(0);transform-origin:left;transition:transform 0.3s}
+        .rw-stat:hover::after{transform:scaleX(1)}
         .rw-stat-val   { display:block; font-family:var(--rw-head); font-weight:700; font-size:clamp(1.4rem,3vw,2rem); color:var(--rw-accent2); letter-spacing:-0.5px; }
         .rw-stat-label { display:block; font-family:var(--rw-mono); font-size:10px; color:var(--rw-muted); margin-top:4px; letter-spacing:0.5px; }
 
         /* Split 3 */
         .rw-split-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--rw-border); }
-        .rw-split-card { background:var(--rw-surface); padding:2rem 1.5rem; transition:background 0.2s, transform 0.2s; }
-        .rw-split-card:hover { background:var(--rw-surf2); }
+        .rw-split-card { background:var(--rw-surface); padding:2rem 1.5rem; transition:background 0.2s; }
+        .rw-split-card:hover{background:var(--rw-surf2)}
         .rw-split-icon  { font-size:1.75rem; margin-bottom:12px; display:block; }
         .rw-split-num   { font-family:var(--rw-mono); font-size:11px; font-weight:700; color:var(--rw-accent); letter-spacing:2px; margin-bottom:10px; width:28px; height:28px; border:1px solid var(--rw-accent); display:flex; align-items:center; justify-content:center; }
         .rw-split-title { font-family:var(--rw-mono); font-size:11px; font-weight:700; letter-spacing:2px; color:var(--rw-text); margin-bottom:12px; }
@@ -1659,167 +1490,166 @@ export default function App() {
         .rw-cta-headline { font-family:var(--rw-head); font-size:1.3rem; font-weight:700; color:var(--rw-text); margin-top:4px; }
         .rw-cta-btns { display:flex; gap:10px; flex-wrap:wrap; }
 
-        /* ── DISCUSSION TABS ── */
+        /* DISCUSSION TABS */
         .rw-tab-bar { display:flex; flex-wrap:wrap; gap:2px; margin-bottom:2px; border-bottom:1px solid var(--rw-border); }
         .rw-tab { display:flex; align-items:center; gap:8px; padding:10px 16px; background:none; border:none; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:color 0.15s; }
         .rw-tab-num  { font-family:var(--rw-mono); font-size:10px; color:var(--rw-dim); letter-spacing:1px; }
         .rw-tab-name { font-family:var(--rw-head); font-size:12px; font-weight:600; color:var(--rw-muted); white-space:nowrap; }
-        .rw-tab:hover .rw-tab-name { color:var(--rw-text); }
-        .rw-tab-active { border-bottom-color:var(--rw-accent); }
-        .rw-tab-active .rw-tab-name { color:var(--rw-accent2); }
-        .rw-tab-active .rw-tab-num  { color:var(--rw-accent); }
+        .rw-tab:hover .rw-tab-name{color:var(--rw-text)}
+        .rw-tab-active{border-bottom-color:var(--rw-accent)}
+        .rw-tab-active .rw-tab-name{color:var(--rw-accent2)}
+        .rw-tab-active .rw-tab-num{color:var(--rw-accent)}
         .rw-tab-content { padding:2rem; background:var(--rw-surface); border:1px solid var(--rw-border); border-top:none; min-height:300px; animation:fadeIn 0.3s ease; }
         .rw-tab-content-header { display:flex; align-items:center; gap:12px; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:1px solid var(--rw-border); }
-        .rw-tab-content-icon  { font-size:1.5rem; }
+        .rw-tab-content-icon{font-size:1.5rem}
         .rw-tab-content-title { font-family:var(--rw-head); font-size:1.3rem; font-weight:700; color:var(--rw-text); }
-        .rw-disc-text      { font-size:13.5px; line-height:1.9; color:var(--rw-muted); margin-bottom:1rem; }
+        .rw-disc-text { font-size:13.5px; line-height:1.9; color:var(--rw-muted); margin-bottom:1rem; }
         .rw-disc-highlight { padding:14px 18px; background:var(--rw-bg2); border-left:3px solid var(--rw-accent); margin:1rem 0; }
-        .rw-disc-mono      { font-family:var(--rw-mono); font-size:11px; color:var(--rw-accent2); letter-spacing:0.5px; }
-        .rw-steps { display:flex; flex-direction:column; }
-        .rw-step  { display:flex; gap:16px; }
-        .rw-step-left      { display:flex; flex-direction:column; align-items:center; flex-shrink:0; }
-        .rw-step-num       { width:36px; height:36px; border-radius:50%; background:var(--rw-accent); color:#fff; font-family:var(--rw-mono); font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-        .rw-step-connector { flex:1; width:1px; background:var(--rw-border); min-height:20px; }
-        .rw-step-right { padding-bottom:1.5rem; flex:1; }
-        .rw-step-name  { font-family:var(--rw-head); font-size:13px; font-weight:700; color:var(--rw-accent2); margin-bottom:4px; margin-top:6px; }
-        .rw-step-desc  { font-size:13px; line-height:1.75; color:var(--rw-muted); }
-        .rw-disc-table { display:flex; flex-direction:column; gap:2px; }
-        .rw-disc-row   { display:flex; gap:0; background:var(--rw-bg2); border:1px solid var(--rw-border); transition:background 0.15s; }
-        .rw-disc-row:hover { background:rgba(37,99,235,0.05); }
-        .rw-disc-term  { font-family:var(--rw-mono); font-size:11px; font-weight:700; color:var(--rw-accent2); padding:12px 16px; border-left:3px solid var(--rw-accent); min-width:220px; flex-shrink:0; border-right:1px solid var(--rw-border); display:flex; align-items:center; }
-        .rw-disc-def   { font-size:13px; line-height:1.6; color:var(--rw-muted); padding:12px 16px; }
-        .rw-cases { display:flex; flex-direction:column; gap:16px; }
-        .rw-case  { padding:1.25rem; background:var(--rw-bg2); border:1px solid var(--rw-border); border-top:2px solid var(--rw-accent); }
-        .rw-case-top    { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px; }
-        .rw-case-name   { font-family:var(--rw-head); font-size:1rem; font-weight:700; color:var(--rw-text); }
-        .rw-case-badge  { font-family:var(--rw-mono); font-size:9px; letter-spacing:1.5px; padding:3px 8px; background:var(--rw-accent); color:#fff; flex-shrink:0; }
-        .rw-case-meta   { display:flex; gap:10px; margin-bottom:6px; font-family:var(--rw-mono); font-size:11px; }
-        .rw-case-key    { color:var(--rw-accent); min-width:55px; }
-        .rw-case-val    { color:var(--rw-muted); }
-        .rw-case-detail { font-size:13px; line-height:1.75; color:var(--rw-muted); margin-top:10px; padding-top:10px; border-top:1px solid var(--rw-border); }
+        .rw-disc-mono { font-family:var(--rw-mono); font-size:11px; color:var(--rw-accent2); letter-spacing:0.5px; }
+        .rw-steps{display:flex;flex-direction:column}
+        .rw-step{display:flex;gap:16px}
+        .rw-step-left{display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+        .rw-step-num{width:36px;height:36px;border-radius:50%;background:var(--rw-accent);color:#fff;font-family:var(--rw-mono);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .rw-step-connector{flex:1;width:1px;background:var(--rw-border);min-height:20px}
+        .rw-step-right{padding-bottom:1.5rem;flex:1}
+        .rw-step-name{font-family:var(--rw-head);font-size:13px;font-weight:700;color:var(--rw-accent2);margin-bottom:4px;margin-top:6px}
+        .rw-step-desc{font-size:13px;line-height:1.75;color:var(--rw-muted)}
+        .rw-disc-table{display:flex;flex-direction:column;gap:2px}
+        .rw-disc-row{display:flex;background:var(--rw-bg2);border:1px solid var(--rw-border);transition:background 0.15s}
+        .rw-disc-row:hover{background:rgba(37,99,235,0.05)}
+        .rw-disc-term{font-family:var(--rw-mono);font-size:11px;font-weight:700;color:var(--rw-accent2);padding:12px 16px;border-left:3px solid var(--rw-accent);min-width:220px;flex-shrink:0;border-right:1px solid var(--rw-border);display:flex;align-items:center}
+        .rw-disc-def{font-size:13px;line-height:1.6;color:var(--rw-muted);padding:12px 16px}
+        .rw-cases{display:flex;flex-direction:column;gap:16px}
+        .rw-case{padding:1.25rem;background:var(--rw-bg2);border:1px solid var(--rw-border);border-top:2px solid var(--rw-accent)}
+        .rw-case-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+        .rw-case-name{font-family:var(--rw-head);font-size:1rem;font-weight:700;color:var(--rw-text)}
+        .rw-case-badge{font-family:var(--rw-mono);font-size:9px;letter-spacing:1.5px;padding:3px 8px;background:var(--rw-accent);color:#fff;flex-shrink:0}
+        .rw-case-meta{display:flex;gap:10px;margin-bottom:6px;font-family:var(--rw-mono);font-size:11px}
+        .rw-case-key{color:var(--rw-accent);min-width:55px}
+        .rw-case-val{color:var(--rw-muted)}
+        .rw-case-detail{font-size:13px;line-height:1.75;color:var(--rw-muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--rw-border)}
 
-        /* ── ARTICLES ── */
-        .rw-articles { display:flex; flex-direction:column; gap:1px; background:var(--rw-border); }
-        .rw-article  { display:flex; background:var(--rw-surface); transition:background 0.2s; }
-        .rw-article:hover { background:var(--rw-surf2); }
-        .rw-article-left   { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:10px; padding:1.5rem 1rem; flex-shrink:0; width:90px; border-right:2px solid var(--rw-border); }
-        .rw-article-num    { font-family:var(--rw-mono); font-size:11px; font-weight:700; letter-spacing:1px; }
-        .rw-article-tag    { font-family:var(--rw-mono); font-size:9px; font-weight:700; letter-spacing:1px; padding:3px 6px; color:#000; text-align:center; }
-        .rw-article-date   { font-family:var(--rw-mono); font-size:9px; color:var(--rw-dim); text-align:center; writing-mode:vertical-rl; transform:rotate(180deg); margin-top:auto; }
-        .rw-article-right  { flex:1; padding:1.5rem; }
-        .rw-article-source { font-family:var(--rw-mono); font-size:10px; letter-spacing:1.5px; color:var(--rw-accent2); margin-bottom:6px; }
-        .rw-article-title  { font-family:var(--rw-head); font-size:clamp(1rem,2.5vw,1.3rem); font-weight:700; color:var(--rw-text); margin-bottom:10px; line-height:1.25; }
-        .rw-article-summary{ font-size:13px; line-height:1.75; color:var(--rw-muted); margin-bottom:14px; }
-        .rw-article-points { display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
-        .rw-point          { display:flex; align-items:flex-start; gap:10px; }
-        .rw-point-bullet   { width:6px; height:6px; border-radius:50%; flex-shrink:0; margin-top:5px; }
-        .rw-point-text     { font-size:12px; color:var(--rw-muted); line-height:1.6; }
-        .rw-source-link    { font-family:var(--rw-mono); font-size:11px; letter-spacing:1.5px; text-decoration:none; transition:letter-spacing 0.2s; }
-        .rw-source-link:hover { letter-spacing:2.5px; }
+        /* ARTICLES */
+        .rw-articles{display:flex;flex-direction:column;gap:1px;background:var(--rw-border)}
+        .rw-article{display:flex;background:var(--rw-surface);transition:background 0.2s}
+        .rw-article:hover{background:var(--rw-surf2)}
+        .rw-article-left{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:10px;padding:1.5rem 1rem;flex-shrink:0;width:90px;border-right:2px solid var(--rw-border)}
+        .rw-article-num{font-family:var(--rw-mono);font-size:11px;font-weight:700;letter-spacing:1px}
+        .rw-article-tag{font-family:var(--rw-mono);font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 6px;color:#000;text-align:center}
+        .rw-article-date{font-family:var(--rw-mono);font-size:9px;color:var(--rw-dim);text-align:center;writing-mode:vertical-rl;transform:rotate(180deg);margin-top:auto}
+        .rw-article-right{flex:1;padding:1.5rem}
+        .rw-article-source{font-family:var(--rw-mono);font-size:10px;letter-spacing:1.5px;color:var(--rw-accent2);margin-bottom:6px}
+        .rw-article-title{font-family:var(--rw-head);font-size:clamp(1rem,2.5vw,1.3rem);font-weight:700;color:var(--rw-text);margin-bottom:10px;line-height:1.25}
+        .rw-article-summary{font-size:13px;line-height:1.75;color:var(--rw-muted);margin-bottom:14px}
+        .rw-article-points{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+        .rw-point{display:flex;align-items:flex-start;gap:10px}
+        .rw-point-bullet{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px}
+        .rw-point-text{font-size:12px;color:var(--rw-muted);line-height:1.6}
+        .rw-source-link{font-family:var(--rw-mono);font-size:11px;letter-spacing:1.5px;text-decoration:none;transition:letter-spacing 0.2s}
+        .rw-source-link:hover{letter-spacing:2.5px}
 
-        /* ── REFLECTION ── */
-        .rw-quote-block { display:flex; gap:1.5rem; padding:2rem; background:var(--rw-surface); border:1px solid var(--rw-border); margin-bottom:2.5rem; border-left:4px solid var(--rw-accent); }
-        .rw-quote-mark  { font-family:var(--rw-head); font-size:5rem; font-weight:700; color:var(--rw-accent); line-height:0.7; flex-shrink:0; }
-        .rw-quote-text  { font-family:var(--rw-head); font-size:clamp(1rem,2.5vw,1.4rem); font-weight:600; color:var(--rw-text); line-height:1.4; margin-bottom:10px; }
-        .rw-quote-attr  { font-family:var(--rw-mono); font-size:11px; color:var(--rw-muted); }
-        .rw-reflections { display:flex; flex-direction:column; gap:2px; background:var(--rw-border); margin-bottom:2rem; }
-        .rw-reflection-card { background:var(--rw-surface); padding:2rem; }
-        .rw-rc-header { display:flex; align-items:center; gap:16px; margin-bottom:1rem; }
-        .rw-rc-num    { font-family:var(--rw-mono); font-size:11px; font-weight:700; color:var(--rw-accent); letter-spacing:1px; width:32px; height:32px; border:1px solid var(--rw-accent); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-        .rw-rc-title  { font-family:var(--rw-mono); font-size:11px; font-weight:700; letter-spacing:2px; color:var(--rw-accent2); }
-        .rw-rc-text   { font-size:14px; line-height:1.9; color:var(--rw-muted); text-align:justify; }
-        .rw-closing   { padding:2.5rem; background:linear-gradient(135deg, var(--rw-surface) 0%, var(--rw-bg2) 100%); border:1px solid var(--rw-border); border-left:4px solid var(--rw-accent); text-align:center; }
-        .rw-closing-text { font-family:var(--rw-head); font-size:clamp(1.2rem,3.5vw,2rem); font-weight:700; color:var(--rw-text); letter-spacing:1px; margin-top:8px; }
+        /* REFLECTION */
+        .rw-quote-block{display:flex;gap:1.5rem;padding:2rem;background:var(--rw-surface);border:1px solid var(--rw-border);margin-bottom:2.5rem;border-left:4px solid var(--rw-accent)}
+        .rw-quote-mark{font-family:var(--rw-head);font-size:5rem;font-weight:700;color:var(--rw-accent);line-height:0.7;flex-shrink:0}
+        .rw-quote-text{font-family:var(--rw-head);font-size:clamp(1rem,2.5vw,1.4rem);font-weight:600;color:var(--rw-text);line-height:1.4;margin-bottom:10px}
+        .rw-quote-attr{font-family:var(--rw-mono);font-size:11px;color:var(--rw-muted)}
+        .rw-reflections{display:flex;flex-direction:column;gap:2px;background:var(--rw-border);margin-bottom:2rem}
+        .rw-reflection-card{background:var(--rw-surface);padding:2rem}
+        .rw-rc-header{display:flex;align-items:center;gap:16px;margin-bottom:1rem}
+        .rw-rc-num{font-family:var(--rw-mono);font-size:11px;font-weight:700;color:var(--rw-accent);letter-spacing:1px;width:32px;height:32px;border:1px solid var(--rw-accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .rw-rc-title{font-family:var(--rw-mono);font-size:11px;font-weight:700;letter-spacing:2px;color:var(--rw-accent2)}
+        .rw-rc-text{font-size:14px;line-height:1.9;color:var(--rw-muted);text-align:justify}
+        .rw-closing{padding:2.5rem;background:linear-gradient(135deg,var(--rw-surface) 0%,var(--rw-bg2) 100%);border:1px solid var(--rw-border);border-left:4px solid var(--rw-accent);text-align:center}
+        .rw-closing-text{font-family:var(--rw-head);font-size:clamp(1.2rem,3.5vw,2rem);font-weight:700;color:var(--rw-text);letter-spacing:1px;margin-top:8px}
 
-        /* ── ABOUT ── */
-        .rw-identity { display:flex; gap:0; margin-bottom:2.5rem; border:1px solid var(--rw-border); background:var(--rw-surface); }
-        .rw-id-avatar { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:2rem 1.5rem; flex-shrink:0; min-width:150px; background:var(--rw-bg2); border-right:1px solid var(--rw-border); }
-        .rw-id-initials { width:80px; height:80px; background:var(--rw-accent); display:flex; align-items:center; justify-content:center; font-family:var(--rw-head); font-size:2rem; font-weight:700; color:#fff; box-shadow:0 0 24px var(--rw-glow); animation:pulseNode 3s infinite; }
-        .rw-id-photo-label { font-family:var(--rw-mono); font-size:9px; letter-spacing:1.5px; color:var(--rw-dim); text-align:center; }
-        .rw-id-info { flex:1; padding:1.5rem; }
-        .rw-id-name { font-family:var(--rw-head); font-size:1.5rem; font-weight:700; color:var(--rw-text); margin-bottom:1rem; padding-bottom:1rem; border-bottom:1px solid var(--rw-border); }
-        .rw-id-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:0; }
-        .rw-id-field { display:flex; flex-direction:column; gap:2px; padding:10px 12px; border-right:1px solid var(--rw-border); border-bottom:1px solid var(--rw-border); }
-        .rw-id-field:nth-child(even) { border-right:none; }
-        .rw-id-key { font-family:var(--rw-mono); font-size:9px; letter-spacing:1.5px; color:var(--rw-accent); }
-        .rw-id-val { font-family:var(--rw-head); font-size:13px; font-weight:500; color:var(--rw-text); }
-        .rw-about-block { display:flex; gap:0; margin-bottom:1.5rem; border:1px solid var(--rw-border); }
-        .rw-about-block-label { font-family:var(--rw-mono); font-size:9px; font-weight:700; letter-spacing:2px; color:var(--rw-accent); padding:1.5rem 1rem; background:var(--rw-bg2); border-right:1px solid var(--rw-border); writing-mode:vertical-rl; transform:rotate(180deg); flex-shrink:0; display:flex; align-items:center; }
-        .rw-about-block-body { padding:1.5rem; flex:1; background:var(--rw-surface); }
-        .rw-about-para { font-size:13.5px; line-height:1.85; color:var(--rw-muted); margin-bottom:0.85rem; }
-        .rw-about-para:last-child { margin-bottom:0; }
-        .rw-skills { display:flex; flex-wrap:wrap; gap:8px; }
-        .rw-skill  { font-family:var(--rw-mono); font-size:10px; letter-spacing:1px; padding:6px 14px; border:1px solid var(--rw-accent); color:var(--rw-accent2); border-radius:1px; transition:background 0.15s, transform 0.1s; cursor:default; }
-        .rw-skill:hover { background:rgba(37,99,235,0.1); transform:translateY(-1px); }
-        .rw-about-note { padding:1.5rem; background:var(--rw-bg2); border:1px solid var(--rw-border); border-left:3px solid var(--rw-accent); margin-top:0.5rem; }
-        .rw-note-text { font-size:13px; line-height:1.8; color:var(--rw-muted); margin-top:6px; }
+        /* ABOUT */
+        .rw-identity{display:flex;margin-bottom:2.5rem;border:1px solid var(--rw-border);background:var(--rw-surface)}
+        .rw-id-avatar{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:2rem 1.5rem;flex-shrink:0;min-width:150px;background:var(--rw-bg2);border-right:1px solid var(--rw-border)}
+        .rw-id-photo-label{font-family:var(--rw-mono);font-size:9px;letter-spacing:1.5px;color:var(--rw-dim);text-align:center}
+        .rw-id-info{flex:1;padding:1.5rem}
+        .rw-id-name{font-family:var(--rw-head);font-size:1.5rem;font-weight:700;color:var(--rw-text);margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--rw-border)}
+        .rw-id-grid{display:grid;grid-template-columns:repeat(2,1fr)}
+        .rw-id-field{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-right:1px solid var(--rw-border);border-bottom:1px solid var(--rw-border)}
+        .rw-id-field:nth-child(even){border-right:none}
+        .rw-id-key{font-family:var(--rw-mono);font-size:9px;letter-spacing:1.5px;color:var(--rw-accent)}
+        .rw-id-val{font-family:var(--rw-head);font-size:13px;font-weight:500;color:var(--rw-text)}
+        .rw-about-block{display:flex;margin-bottom:1.5rem;border:1px solid var(--rw-border)}
+        .rw-about-block-label{font-family:var(--rw-mono);font-size:9px;font-weight:700;letter-spacing:2px;color:var(--rw-accent);padding:1.5rem 1rem;background:var(--rw-bg2);border-right:1px solid var(--rw-border);writing-mode:vertical-rl;transform:rotate(180deg);flex-shrink:0;display:flex;align-items:center}
+        .rw-about-block-body{padding:1.5rem;flex:1;background:var(--rw-surface)}
+        .rw-about-para{font-size:13.5px;line-height:1.85;color:var(--rw-muted);margin-bottom:0.85rem}
+        .rw-about-para:last-child{margin-bottom:0}
+        .rw-skills{display:flex;flex-wrap:wrap;gap:8px}
+        .rw-skill{font-family:var(--rw-mono);font-size:10px;letter-spacing:1px;padding:6px 14px;border:1px solid var(--rw-accent);color:var(--rw-accent2);border-radius:1px;transition:background 0.15s,transform 0.1s;cursor:default}
+        .rw-skill:hover{background:rgba(37,99,235,0.1);transform:translateY(-1px)}
+        .rw-about-note{padding:1.5rem;background:var(--rw-bg2);border:1px solid var(--rw-border);border-left:3px solid var(--rw-accent);margin-top:0.5rem}
+        .rw-note-text{font-size:13px;line-height:1.8;color:var(--rw-muted);margin-top:6px}
 
-        /* ── FOOTER ── */
-        .rw-footer { border-top:1px solid var(--rw-border); background:var(--rw-bg2); margin-top:4rem; }
-        .rw-footer-inner { max-width:1060px; margin:0 auto; padding:3rem 1.5rem; display:grid; grid-template-columns:2fr 1fr 1fr; gap:3rem; }
-        .rw-footer-brand { font-family:var(--rw-head); font-size:1.1rem; font-weight:700; color:var(--rw-text); letter-spacing:1px; margin-bottom:10px; display:block; }
-        .rw-footer-desc  { font-size:13px; line-height:1.7; color:var(--rw-muted); }
-        .rw-footer-col-label { font-family:var(--rw-mono); font-size:9px; font-weight:700; letter-spacing:2px; color:var(--rw-accent); margin-bottom:14px; }
-        .rw-footer-links { display:flex; flex-direction:column; gap:8px; }
-        .rw-footer-link  { background:none; border:none; cursor:pointer; font-family:var(--rw-head); font-size:13px; font-weight:500; color:var(--rw-muted); text-align:left; padding:0; transition:color 0.15s; }
-        .rw-footer-link:hover { color:var(--rw-accent2); }
-        .rw-footer-sources { font-family:var(--rw-mono); font-size:10px; color:var(--rw-dim); line-height:1.9; letter-spacing:0.5px; }
-        .rw-footer-bottom { max-width:1060px; margin:0 auto; padding:1.25rem 1.5rem; border-top:1px solid var(--rw-border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; font-family:var(--rw-mono); font-size:10px; color:var(--rw-dim); }
-        .rw-footer-tag { color:var(--rw-accent); opacity:0.7; }
+        /* FOOTER */
+        .rw-footer{border-top:1px solid var(--rw-border);background:var(--rw-bg2);margin-top:4rem}
+        .rw-footer-inner{max-width:1060px;margin:0 auto;padding:3rem 1.5rem;display:grid;grid-template-columns:2fr 1fr 1fr;gap:3rem}
+        .rw-footer-brand{font-family:var(--rw-head);font-size:1.1rem;font-weight:700;color:var(--rw-text);letter-spacing:1px;margin-bottom:10px;display:block}
+        .rw-footer-desc{font-size:13px;line-height:1.7;color:var(--rw-muted)}
+        .rw-footer-col-label{font-family:var(--rw-mono);font-size:9px;font-weight:700;letter-spacing:2px;color:var(--rw-accent);margin-bottom:14px}
+        .rw-footer-links{display:flex;flex-direction:column;gap:8px}
+        .rw-footer-link{background:none;border:none;cursor:pointer;font-family:var(--rw-head);font-size:13px;font-weight:500;color:var(--rw-muted);text-align:left;padding:0;transition:color 0.15s}
+        .rw-footer-link:hover{color:var(--rw-accent2)}
+        .rw-footer-sources{font-family:var(--rw-mono);font-size:10px;color:var(--rw-dim);line-height:1.9;letter-spacing:0.5px}
+        .rw-footer-bottom{max-width:1060px;margin:0 auto;padding:1.25rem 1.5rem;border-top:1px solid var(--rw-border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;font-family:var(--rw-mono);font-size:10px;color:var(--rw-dim)}
+        .rw-footer-tag{color:var(--rw-accent);opacity:0.7}
 
-        /* ── RESPONSIVE ── */
-        @media (max-width:900px) {
-          .rw-hero       { grid-template-columns:1fr; gap:2rem; }
-          .rw-hero-right { display:none; }
-          .rw-stats-row  { grid-template-columns:repeat(2,1fr); }
-          .rw-stat:nth-child(2) { border-right:none; }
-          .rw-split-3    { grid-template-columns:repeat(2,1fr); }
-          .rw-tab-bar    { overflow-x:auto; flex-wrap:nowrap; padding-bottom:0; }
-          .rw-tab        { flex-shrink:0; }
-          .rw-disc-term  { min-width:160px; }
-          .rw-footer-inner { grid-template-columns:1fr 1fr; }
-          .rw-footer-inner > div:first-child { grid-column:1/-1; }
-          .rw-nav-links  { display:none; }
-          .rw-hamburger  { display:flex; }
+        /* RESPONSIVE */
+        @media(max-width:900px){
+          .rw-hero{grid-template-columns:1fr;gap:2rem}
+          .rw-hero-right{display:none}
+          .rw-stats-row{grid-template-columns:repeat(2,1fr)}
+          .rw-stat:nth-child(2){border-right:none}
+          .rw-split-3{grid-template-columns:repeat(2,1fr)}
+          .rw-tab-bar{overflow-x:auto;flex-wrap:nowrap}
+          .rw-tab{flex-shrink:0}
+          .rw-disc-term{min-width:160px}
+          .rw-footer-inner{grid-template-columns:1fr 1fr}
+          .rw-footer-inner>div:first-child{grid-column:1/-1}
+          .rw-nav-links{display:none}
+          .rw-hamburger{display:flex}
         }
-        @media (max-width:600px) {
-          .rw-nav        { padding:0 1rem; }
-          .rw-page       { padding:2rem 1rem 5rem; }
-          .rw-hero-h1    { font-size:clamp(3rem,14vw,5rem); letter-spacing:-1px; }
-          .rw-stats-row  { grid-template-columns:repeat(2,1fr); }
-          .rw-stat       { padding:1rem; }
-          .rw-split-3    { grid-template-columns:1fr; }
-          .rw-tl-row     { grid-template-columns:44px 20px 1fr; }
-          .rw-disc-row   { flex-direction:column; }
-          .rw-disc-term  { min-width:unset; border-right:none; border-bottom:1px solid var(--rw-border); }
-          .rw-article    { flex-direction:column; }
-          .rw-article-left { flex-direction:row; width:100%; border-right:none; border-bottom:1px solid var(--rw-border); padding:10px 16px; align-items:center; }
-          .rw-article-date { writing-mode:horizontal-tb; transform:none; margin-top:0; margin-left:auto; }
-          .rw-identity   { flex-direction:column; }
-          .rw-id-avatar  { flex-direction:row; border-right:none; border-bottom:1px solid var(--rw-border); min-width:unset; padding:1.25rem; }
-          .rw-id-grid    { grid-template-columns:1fr; }
-          .rw-id-field:nth-child(even) { border-right:none; }
-          .rw-id-field   { border-right:none; }
-          .rw-about-block { flex-direction:column; }
-          .rw-about-block-label { writing-mode:horizontal-tb; transform:none; border-right:none; border-bottom:1px solid var(--rw-border); padding:10px 16px; }
-          .rw-quote-block { flex-direction:column; gap:0.5rem; }
-          .rw-quote-mark  { font-size:3rem; }
-          .rw-footer-inner { grid-template-columns:1fr; gap:2rem; }
-          .rw-footer-inner > div:first-child { grid-column:unset; }
-          .rw-footer-bottom { flex-direction:column; align-items:flex-start; }
-          .rw-tab-content { padding:1.25rem; }
-          .rw-cta-strip   { flex-direction:column; align-items:flex-start; }
-          .rw-hero-actions, .rw-cta-btns { flex-direction:column; }
-          .rw-btn-solid, .rw-btn-ghost { width:100%; text-align:center; }
+        @media(max-width:600px){
+          .rw-nav{padding:0 1rem}
+          .rw-page{padding:2rem 1rem 5rem}
+          .rw-hero-h1{font-size:clamp(3rem,14vw,5rem);letter-spacing:-1px}
+          .rw-stats-row{grid-template-columns:repeat(2,1fr)}
+          .rw-stat{padding:1rem}
+          .rw-split-3{grid-template-columns:1fr}
+          .rw-tl-row{grid-template-columns:44px 20px 1fr}
+          .rw-disc-row{flex-direction:column}
+          .rw-disc-term{min-width:unset;border-right:none;border-bottom:1px solid var(--rw-border)}
+          .rw-article{flex-direction:column}
+          .rw-article-left{flex-direction:row;width:100%;border-right:none;border-bottom:1px solid var(--rw-border);padding:10px 16px;align-items:center}
+          .rw-article-date{writing-mode:horizontal-tb;transform:none;margin-top:0;margin-left:auto}
+          .rw-identity{flex-direction:column}
+          .rw-id-avatar{border-right:none;border-bottom:1px solid var(--rw-border);min-width:unset;padding:1.25rem;flex-direction:row}
+          .rw-id-grid{grid-template-columns:1fr}
+          .rw-id-field:nth-child(even){border-right:none}
+          .rw-id-field{border-right:none}
+          .rw-about-block{flex-direction:column}
+          .rw-about-block-label{writing-mode:horizontal-tb;transform:none;border-right:none;border-bottom:1px solid var(--rw-border);padding:10px 16px}
+          .rw-quote-block{flex-direction:column;gap:0.5rem}
+          .rw-quote-mark{font-size:3rem}
+          .rw-footer-inner{grid-template-columns:1fr;gap:2rem}
+          .rw-footer-inner>div:first-child{grid-column:unset}
+          .rw-footer-bottom{flex-direction:column;align-items:flex-start}
+          .rw-tab-content{padding:1.25rem}
+          .rw-cta-strip{flex-direction:column;align-items:flex-start}
+          .rw-hero-actions,.rw-cta-btns{flex-direction:column}
+          .rw-btn-solid,.rw-btn-ghost{width:100%;text-align:center}
         }
-        @media (max-width:380px) {
-          .rw-stats-row  { grid-template-columns:1fr 1fr; }
-          .rw-page-title { font-size:1.8rem; }
-          .rw-tab-name   { display:none; }
+        @media(max-width:380px){
+          .rw-stats-row{grid-template-columns:1fr 1fr}
+          .rw-page-title{font-size:1.8rem}
+          .rw-tab-name{display:none}
         }
       `}</style>
 
-      <NetworkBg />
+      <FloatingPadlocksBg />
       <div className="rw-bg-blobs" />
       <NavBar active={active} setActive={setActive} />
       {pages[active]}
