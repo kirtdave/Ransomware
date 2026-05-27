@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Dark background -->
+  <rect width="64" height="64" rx="10" fill="#03080f"/>
+
+  <!-- Circuit traces -->
+  <line x1="16" y1="22" x2="8" y2="22" stroke="#102040" stroke-width="1.2"/>
+  <circle cx="7" cy="22" r="1.8" fill="#2563eb" opacity="0.7"/>
+  <line x1="48" y1="22" x2="56" y2="22" stroke="#102040" stroke-width="1.2"/>
+  <circle cx="57" cy="22" r="1.8" fill="#2563eb" opacity="0.7"/>
+  <line x1="32" y1="52" x2="32" y2="58" stroke="#102040" stroke-width="1.2"/>
+  <circle cx="32" cy="59" r="1.8" fill="#2563eb" opacity="0.5"/>
+
+  <!-- Shackle -->
+  <path d="M 20 26 L 20 18 Q 20 8 32 8 Q 44 8 44 18 L 44 26"
+        fill="none" stroke="#2563eb" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Shackle highlight -->
+  <path d="M 20 26 L 20 18 Q 20 8 32 8 Q 44 8 44 18 L 44 26"
+        fill="none" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.35"/>
+
+  <!-- Lock body -->
+  <rect x="12" y="26" width="40" height="32" rx="6" fill="#081425" stroke="#2563eb" stroke-width="2"/>
+
+  <!-- Subtle grid lines on body -->
+  <line x1="12" y1="36" x2="52" y2="36" stroke="#102040" stroke-width="0.7"/>
+  <line x1="32" y1="26" x2="32" y2="58" stroke="#102040" stroke-width="0.7"/>
+
+  <!-- Keyhole circle -->
+  <circle cx="32" cy="39" r="7" fill="#0a1a30" stroke="#2563eb" stroke-width="1.4"/>
+  <!-- Keyhole dot -->
+  <circle cx="32" cy="39" r="3" fill="#2563eb"/>
+  <!-- Keyhole slot -->
+  <rect x="30" y="43" width="4" height="7" rx="1.5" fill="#2563eb"/>
+
+  <!-- Corner accent dots -->
+  <circle cx="17" cy="31" r="1.5" fill="#2563eb" opacity="0.5"/>
+  <circle cx="47" cy="31" r="1.5" fill="#2563eb" opacity="0.5"/>
+  <circle cx="17" cy="53" r="1.5" fill="#2563eb" opacity="0.5"/>
+  <circle cx="47" cy="53" r="1.5" fill="#2563eb" opacity="0.5"/>
+</svg>
